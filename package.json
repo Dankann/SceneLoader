@@ -1,0 +1,15 @@
+{
+  "name": "com.dankann.scene-loader",
+  "version": "1.0.0",
+  "displayName": "Scene Loader",
+  "description": "This package manages loading and unloading scenes in Unity",
+  "unity": "2018.4",
+ "keywords": [
+    "scene"
+  ],
+  "author": {
+    "name": "Dankann Weissmüller",
+    "email": "dankann.weissmuller@gmail.com",
+    "url": "https://github.com/Dankann"
+  }
+}
