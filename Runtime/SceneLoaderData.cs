@@ -2,53 +2,57 @@
 using System.Threading.Tasks;
 using UnityEngine;
 using UnityEngine.SceneManagement;
+using Utils;
 
-[CreateAssetMenu(fileName = "SceneLoaderData", menuName = "Realvi/Scene Loader Data")]
-public class SceneLoaderData : ScriptableObject
+namespace Dankann.SceneLoader
 {
-    public List<string> scenesLoading = new List<string>();
-    public List<string> scenesUnloading = new List<string>();
-    public List<string> scenesLoaded = new List<string>();
-
-    public void OnEnable()
+    [CreateAssetMenu(fileName = "SceneLoaderData", menuName = "Scene Loader/Scene Loader Data")]
+    public class SceneLoaderData : ScriptableObject
     {
-        Clear();
-        SceneManager.sceneLoaded += OnSceneLoaded;
-        SceneManager.sceneUnloaded += OnSceneUnloaded;
-    }
+        public List<string> scenesLoading = new List<string>();
+        public List<string> scenesUnloading = new List<string>();
+        public List<string> scenesLoaded = new List<string>();
 
-    public void Clear()
-    {
-        scenesLoading.Clear();
-        scenesUnloading.Clear();
-        scenesLoaded.Clear();
-    }
-
-    async void OnSceneUnloaded(Scene scene)
-    {
-        await Task.Yield();
-        if (scenesUnloading.Contains(scene.name))
+        public void OnEnable()
         {
-            scenesUnloading.RemoveUnique(scene.name);
-            Debug.Log($"Scene {scene.name} unloaded outside SceneLoader flow. Data updated!");
+            Clear();
+            SceneManager.sceneLoaded += OnSceneLoaded;
+            SceneManager.sceneUnloaded += OnSceneUnloaded;
         }
 
-        scenesLoaded.Clear();
-        for (int i = 0; i < SceneManager.sceneCount; i++)
-            scenesLoaded.AddUnique(SceneManager.GetSceneAt(i).name);
-    }
-
-    async void OnSceneLoaded(Scene scene, LoadSceneMode loadSceneMode)
-    {
-        await Task.Yield();
-        if (scenesLoading.Contains(scene.name))
+        public void Clear()
         {
-            scenesLoading.RemoveUnique(scene.name);
-            Debug.Log($"Scene {scene.name} loaded outside SceneLoader flow. Data updated!");
+            scenesLoading.Clear();
+            scenesUnloading.Clear();
+            scenesLoaded.Clear();
         }
 
-        scenesLoaded.Clear();
-        for (int i = 0; i < SceneManager.sceneCount; i++)
-            scenesLoaded.AddUnique(SceneManager.GetSceneAt(i).name);
+        async void OnSceneUnloaded(Scene scene)
+        {
+            await Task.Yield();
+            if (scenesUnloading.Contains(scene.name))
+            {
+                scenesUnloading.RemoveUnique(scene.name);
+                Debug.Log($"Scene {scene.name} unloaded outside SceneLoader flow. Data updated!");
+            }
+
+            scenesLoaded.Clear();
+            for (int i = 0; i < SceneManager.sceneCount; i++)
+                scenesLoaded.AddUnique(SceneManager.GetSceneAt(i).name);
+        }
+
+        async void OnSceneLoaded(Scene scene, LoadSceneMode loadSceneMode)
+        {
+            await Task.Yield();
+            if (scenesLoading.Contains(scene.name))
+            {
+                scenesLoading.RemoveUnique(scene.name);
+                Debug.Log($"Scene {scene.name} loaded outside SceneLoader flow. Data updated!");
+            }
+
+            scenesLoaded.Clear();
+            for (int i = 0; i < SceneManager.sceneCount; i++)
+                scenesLoaded.AddUnique(SceneManager.GetSceneAt(i).name);
+        }
     }
 }
