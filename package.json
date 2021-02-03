@@ -1,6 +1,6 @@
 {
   "name": "com.dankann.scene-loader",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "displayName": "Scene Loader",
   "description": "This package manages loading and unloading scenes in Unity",
   "unity": "2018.4",
