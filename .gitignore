@@ -1,0 +1,66 @@
+# =============== #
+# Unity generated #
+# =============== #
+[Tt]emp/
+[Oo]bj/
+[Bb]uild
+[Bb]uilds
+[Ll]ibrary/
+UserSettings/
+sysinfo.txt
+*.stackdump
+ 
+# ============================================= #
+# Visual Studio / MonoDevelop / Rider generated #
+# ============================================= #
+[Ee]xported[Oo]bj/
+.vs/
+.vscode/*
+.idea
+/*.userprefs
+/*.csproj
+/*.pidb
+/*.suo
+/*.sln*
+/*.user
+/*.unityproj
+/*.booproj
+Android/MediaButton/.idea*/
+Android/.idea*/
+.idea/.idea.Phon/riderModule.iml
+ 
+# ============ #
+# OS generated #
+# ============ #
+.DS_Store*
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+[Tt]humbs.db
+[Dd]esktop.ini
+
+# Builds
+*.apk
+#*.unitypackage
+*.app
+*.exe
+
+# Firebase
+!Assets/Plugins/Android/libmessaging_unity_player_activity*
+!Assets/Plugins/Android/MediaButton*
+Assets/GeneratedLocalRepo/*
+Assets/GeneratedLocalRepo.meta
+Assets/Plugins/Android/FirebaseApp.androidlib/*
+Assets/Plugins/Android/FirebaseApp.androidlib.meta
+
+# Others
+AssetBundles/
+Assets/Audios/Generated/*
+Assets/Resources/Audios/*
+Assets/AssetBundles*
+SerializedBuildInfo*
+QCAR/*
+iOS/iOSMediaPlugin/Pods*
+Assets/Assets.index
+Assets/Assets.index.meta
