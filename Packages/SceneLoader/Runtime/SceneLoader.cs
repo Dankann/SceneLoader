@@ -1,13 +1,20 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.IO;
 using System.Threading.Tasks;
 using UnityEngine;
 using UnityEngine.SceneManagement;
-using Utils;
+using TaskExtensions = Realvi.Extensions.TaskExtensions;
 
-namespace Dankann.SceneLoader
+namespace Realvi.SceneManagment
 {
     public static class SceneLoader
     {
+        public delegate void SceneLoadHandler(Scene[] currentlyActiveScenes, string sceneName);
+
+        public static event SceneLoadHandler OnLoadSceneRequest;
+        public static event SceneLoadHandler OnLoadSceneComplete;
+
         public static SceneLoaderData SceneLoaderData
         {
             get
@@ -18,19 +25,45 @@ namespace Dankann.SceneLoader
             }
         }
 
+        public static Scene[] ActiveScenesExceptLoading
+        {
+            get
+            {
+                List<Scene> scenes = new List<Scene>();
+
+                for (int i = 0; i < SceneLoaderData.scenesLoaded.Count; i++)
+                {
+                    var sceneName = SceneLoaderData.scenesLoaded[i];
+                    var shouldAdd = true;
+                    for (int j = 0; j < SceneLoaderData.loadingScenes.Length; j++)
+                    {
+                        var loadingSceneRef = SceneLoaderData.loadingScenes[j];
+                        if (sceneName == Path.GetFileNameWithoutExtension(loadingSceneRef.ScenePath))
+                        {
+                            shouldAdd = false;
+                            break;
+                        }
+                    }
+
+                    if (shouldAdd) scenes.Add(SceneManager.GetSceneByName(sceneName));
+                }
+
+                if (scenes.Count <= 0)
+                    scenes.Add(SceneManager.GetActiveScene());
+                
+                return scenes.ToArray();
+            }
+        }
+
         static SceneLoaderData sceneLoaderData;
 
         static bool IsSceneLoaded(string sceneName) => SceneManager.GetSceneByName(sceneName).IsValid();
 
         static bool IsSceneLoaded(int sceneBuildIndex) => IsSceneLoaded(SceneManager.GetSceneByBuildIndex(sceneBuildIndex).name);
 
-        public static async Task LoadSceneAsync(int sceneBuildIndex, string loadingSceneName = "", Func<bool> waitUntilPredicate = null, LoadSceneMode loadSceneMode = LoadSceneMode.Single, Action<float> onProgress = null, Action<AsyncOperation> onFinishLoad = null) =>
-            await LoadSceneAsync(SceneManager.GetSceneByBuildIndex(sceneBuildIndex).name, loadingSceneName, waitUntilPredicate, loadSceneMode, onProgress, onFinishLoad);
-
-        public static async Task UnloadScene(int sceneBuildIndex, Action<float> onProgress = null, Action<AsyncOperation> onFinishUnload = null) =>
-            await UnloadSceneAsync(SceneManager.GetSceneByBuildIndex(sceneBuildIndex).name, onProgress, onFinishUnload);
-
-        public static async Task LoadSceneAsync(string sceneName, string loadingSceneName = "", Func<bool> waitUntilPredicate = null, LoadSceneMode loadSceneMode = LoadSceneMode.Single, Action<float> onProgress = null, Action<AsyncOperation> onFinishLoad = null)
+        public static async Task LoadSceneAsync(int sceneBuildIndex, string loadingSceneName = "", Func<bool> waitUntilPredicate = null, LoadSceneMode intentLoadSceneMode = LoadSceneMode.Single, Action<float> onProgress = null, Action<AsyncOperation> onFinishLoad = null) =>
+            await LoadSceneAsync(SceneManager.GetSceneByBuildIndex(sceneBuildIndex).name, loadingSceneName, waitUntilPredicate, intentLoadSceneMode, onProgress, onFinishLoad);
+        public static async Task LoadSceneAsync(string sceneName, string loadingSceneName = "", Func<bool> waitUntilPredicate = null, LoadSceneMode intentLoadSceneMode = LoadSceneMode.Single, Action<float> onProgress = null, Action<AsyncOperation> onFinishLoad = null)
         {
             sceneName = System.IO.Path.GetFileNameWithoutExtension(sceneName);
 
@@ -47,9 +80,12 @@ namespace Dankann.SceneLoader
                 return;
             }
 
-            await LoadLoadingScene(loadingSceneName, loadSceneMode);
+            OnLoadSceneRequest?.Invoke(ActiveScenesExceptLoading, sceneName);
 
-            var loadingAsync = SceneManager.LoadSceneAsync(sceneName, !string.IsNullOrEmpty(loadingSceneName) ? LoadSceneMode.Additive : loadSceneMode);
+            await LoadLoadingScene(loadingSceneName, intentLoadSceneMode);
+
+            var loadSceneMode = !string.IsNullOrEmpty(loadingSceneName) ? LoadSceneMode.Additive : intentLoadSceneMode;
+            var loadingAsync = SceneManager.LoadSceneAsync(sceneName, loadSceneMode);
 
             loadingAsync.allowSceneActivation = false;
             if (onFinishLoad != null) loadingAsync.completed += onFinishLoad;
@@ -78,9 +114,16 @@ namespace Dankann.SceneLoader
             SceneLoaderData.scenesLoaded.AddUnique(sceneName);
 
             onProgress?.Invoke(loadingAsync.progress);
+            OnLoadSceneComplete?.Invoke(ActiveScenesExceptLoading, sceneName);
 
             await UnloadLoadingScene(loadingSceneName);
+
+            if (loadSceneMode == LoadSceneMode.Additive)
+                LightProbes.TetrahedralizeAsync();
         }
+
+        public static async Task UnloadScene(int sceneBuildIndex, Action<float> onProgress = null, Action<AsyncOperation> onFinishUnload = null) =>
+            await UnloadSceneAsync(SceneManager.GetSceneByBuildIndex(sceneBuildIndex).name, onProgress, onFinishUnload);
 
         public static async Task UnloadSceneAsync(string sceneName, Action<float> onProgress = null, Action<AsyncOperation> onFinishUnload = null)
         {
@@ -130,7 +173,7 @@ namespace Dankann.SceneLoader
 
             await LoadLoadingScene(loadingSceneName, loadSceneMode);
             await UnloadSceneAsync(sceneName, (progress) => onProgress?.Invoke(progress * .5f));
-            await LoadSceneAsync(sceneName, "", waitUntilPredicate, loadSceneMode, (progress) => onProgress?.Invoke(.5f + progress * .5f), onFinishLoad);
+            await LoadSceneAsync(sceneName, "", waitUntilPredicate, loadSceneMode, (progress) => onProgress?.Invoke(.5f + (progress * .5f)), onFinishLoad);
             await UnloadLoadingScene(loadingSceneName);
         }
 
